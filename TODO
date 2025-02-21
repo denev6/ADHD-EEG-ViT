@@ -1,6 +1,5 @@
-# TODO
-
 - 데이터 전처리
+- EEG 장비 조사
 - ViT 학습 (Baseline)
 - ViT 학습 (ImageNet pretrained)
 - LLM 결합 구현

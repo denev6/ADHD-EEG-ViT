@@ -1,5 +1,17 @@
-# Backup Files
+# Backup
 assets/backup_*
+
+# Setup
+.idea/
+.vscode
+desktop.ini
+.ipynb*
+
+# Local
+__pycache__
+assets/IEEE/train.pt
+assets/IEEE/test.pt
+assets/IEEE/val.pt
 
 # Private
 p_*
