@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import mne
 
 # Load the .ced file
-ced_file = "../backup_datasets/IEEE/Standard-10-20-Cap19new copy.ced"
+ced_file = "../../backup_datasets/IEEE/Standard-10-20-Cap19new copy.ced"
 df = pd.read_csv(ced_file, sep="\t")
 
 electrode_data = df[["labels", "X", "Y", "Z"]]

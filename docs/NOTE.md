@@ -25,6 +25,9 @@ ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
 - [EEG-GPT: Exploring Capabilities of Large Language Models for EEG Classification and Interpretation](https://arxiv.org/abs/2401.18006)
 - [ViT2EEG: Leveraging Hybrid Pretrained Vision Transformers for EEG Data](https://arxiv.org/abs/2308.00454)
 - Classification of attention deficit/hyperactivity disorder based on EEG signals using a EEG-Transformer model
+- Detection of ADHD from EEG signals using new hybrid  decomposition and deep learning techniques
+  - 같은 데이터셋(IEEE) 사용
+
 - Enhanced ADHD detection: Frequency information embedded in a visual-language framework
 - EEGViT
 - SSRepL-ADHD: Adaptive Complex Representation Learning Framework for ADHD Detection from Visual Attention Tasks

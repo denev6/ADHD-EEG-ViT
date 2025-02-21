@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
 
-mat_file = "../backup_datasets/IEEE/ADHD_part1/v1p.mat"
+mat_file = "../../backup_datasets/IEEE/ADHD_part1/v1p.mat"
 data = scipy.io.loadmat(mat_file)
-EEG_signal = data["v1p"].astype(np.float32)  # Shape (12258, 19)
+EEG_signal = data["v1p"].astype(np.int32)  # Shape (12258, 19)
 time_vector = np.arange(1, 12259)
 
 plt.figure(figsize=(12, 8))

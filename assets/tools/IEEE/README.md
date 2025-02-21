@@ -1,0 +1,12 @@
+# Dataset: IEEE ADHD-control-children
+
+[Download](https://ieee-dataport.org/open-access/eeg-data-adhd-control-children)
+
+Since one of the deficits in ADHD children is visual attention, the EEG recording protocol was based on visual attention tasks. In the task, a set of pictures of cartoon characters was shown to the children and they were asked to count the characters. The number of characters in each image was randomly selected between 5 and 16, and the size of the pictures was large enough to be easily visible and countable by children. To have a continuous stimulus during the signal recording, each image was displayed immediately and uninterrupted after the child’s response. Thus, the duration of EEG recording throughout this cognitive visual task was dependent on the child’s performance (i.e. response speed).
+
+![v1p 시각화](v1p.png)
+
+## Shape
+
+- length: 9852 ~ 39030
+- channel: 19
