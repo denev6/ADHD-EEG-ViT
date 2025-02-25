@@ -25,26 +25,27 @@ class MyTestCase(unittest.TestCase):
 
     def test_data_size(self):
         for name, dataset in self.DATASETS.items():
-            data = dataset["data"]
-            label = dataset["label"]
+            data_size = list(dataset["data"].size())
+            label_size = list(dataset["label"].size())
             self.assertEqual(
-                data.size()[0],
-                label.size()[0],
-                f"{name} data and label size mismatch (expected: {label.size()[0]}, got {data.size()[0]})",
+                data_size[:1],
+                label_size,
+                f"{name} label size mismatch (expected: {label_size}, got {data_size[:1]})",
             )
             self.assertEqual(
-                data.size()[0],
+                data_size,
                 self.META[f"{name}_size"],
-                f"Unexpected {name} data size (expected: {self.META[f'{name}_size']}, got {data.size()[0]})",
+                f"{name} data size mismatch (expected: {self.META[f'{name}_size']}, got {data_size})",
             )
 
     def test_label_only_contains_0_and_1(self):
         for name, dataset in self.DATASETS.items():
-            zeros = torch.sum(dataset["label"] == 0).item()
-            ones = torch.sum(dataset["label"] == 1).item()
+            labels = dataset["label"]
+            zeros = torch.sum(labels == 0).item()
+            ones = torch.sum(labels == 1).item()
             self.assertEqual(
                 zeros + ones,
-                dataset["label"].size()[0],
+                labels.size()[0],
                 f"Label should only contain 0 and 1 ({name}-set)",
             )
 
