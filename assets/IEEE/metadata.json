@@ -3,21 +3,21 @@
   "description": "EEG dataset for ADHD classification.",
   "license": "CC BY 4.0",
   "train_size": [
-    547,
+    121,
     19,
-    2560
+    9250
   ],
   "val_size": [
-    77,
+    17,
     19,
-    2560
+    9250
   ],
   "test_size": [
-    159,
+    36,
     19,
-    2560
+    9250
   ],
-  "data_length": 2560,
+  "data_length": 9250,
   "channel": 19,
   "label": {
     "1": "ADHD",

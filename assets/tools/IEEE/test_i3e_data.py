@@ -4,7 +4,7 @@ import json
 import torch
 
 
-class MyTestCase(unittest.TestCase):
+class I3ETestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -14,9 +14,11 @@ class MyTestCase(unittest.TestCase):
         with open(os.path.join(data_dir, "metadata.json"), "r") as file:
             cls.META = json.load(file)
 
-        trainset = torch.load(os.path.join(data_dir, "train.pt"), weights_only=True)
-        valset = torch.load(os.path.join(data_dir, "val.pt"), weights_only=True)
-        testset = torch.load(os.path.join(data_dir, "test.pt"), weights_only=True)
+        trainset = torch.load(
+            os.path.join(data_dir, "ieee_train.pt"), weights_only=True
+        )
+        valset = torch.load(os.path.join(data_dir, "ieee_val.pt"), weights_only=True)
+        testset = torch.load(os.path.join(data_dir, "ieee_test.pt"), weights_only=True)
         cls.DATASETS = {
             "train": trainset,
             "val": valset,

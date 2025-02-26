@@ -14,12 +14,12 @@
 
 ## Preprocessing
 
-- Segmented into fixed-length subsets of **2,560** (20ms at 128Hz)  
+- Segmented into fixed-length subsets of **9,250**
   - [preprocess.ipynb](./preprocess.ipynb) for details  
 - Split into **train, validation, and test** sets:  
-  - **Train:** 70% → Shape: `[547, 19, 2560]`  
-  - **Validation:** 10% → Shape: `[77, 19, 2560]`  
-  - **Test:** 20% → Shape: `[159, 19, 2560]`  
+  - **Train:** 70% → Shape: `[121, 19, 9250]`  
+  - **Validation:** 10% → Shape: `[17, 19, 9250]`  
+  - **Test:** 20% → Shape: `[36, 19, 9250]`  
   - [split.ipynb](./split.ipynb) for implementation  
 - Additional metadata available in [metadata.json](/assets/IEEE/metadata.json)  
 
