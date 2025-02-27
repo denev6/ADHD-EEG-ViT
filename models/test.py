@@ -1,7 +1,7 @@
 import unittest
 import torch
 
-from transformer import AttentionBlock, Transformer
+from transformer import AttentionBlock, Transformer, ViTransformer
 
 
 class TestTransformer(unittest.TestCase):
@@ -13,16 +13,39 @@ class TestTransformer(unittest.TestCase):
         input = torch.empty(batch, 1, embed_dim)
         output = block(input)
         self.assertEqual(
-            output.shape, input.shape, "Attention block output shape mismatch"
+            input.shape, output.shape, "Attention block output shape mismatch"
         )
 
     def test_transformer_output_shape(self):
-        batch = 2
+        batch = 4
         input_channel = 3
         seq_length = 4
         num_classes = 2
 
         model = Transformer(
+            input_channel=input_channel,
+            seq_length=seq_length,
+            num_heads=1,
+            num_blocks=1,
+            block_hidden_dim=1,
+            fc_hidden_dim=1,
+            num_classes=2,
+        )
+        input = torch.empty(batch, seq_length, input_channel)
+        output = model(input)
+        self.assertEqual(
+            torch.Size([batch, num_classes]),
+            output.shape,
+            "Transformer output shape mismatch",
+        )
+
+    def test_vitransformer_output_shape(self):
+        batch = 4
+        input_channel = 3
+        seq_length = 4
+        num_classes = 2
+
+        model = ViTransformer(
             input_channel=input_channel,
             seq_length=seq_length,
             embed_dim=1,
@@ -35,7 +58,7 @@ class TestTransformer(unittest.TestCase):
         input = torch.empty(batch, input_channel, seq_length)
         output = model(input)
         self.assertEqual(
-            output.shape,
             torch.Size([batch, num_classes]),
-            "Transformer output shape mismatch",
+            output.shape,
+            "viTransformer output shape mismatch",
         )

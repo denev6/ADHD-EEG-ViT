@@ -1,4 +1,4 @@
-# Utils for Training Models
+# Utilities for Model Training
 
 Available classes and functions: [list](__init__.py)
 

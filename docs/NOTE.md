@@ -9,16 +9,12 @@ ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
 - Vision Transformer
 - Large Language model
 
-## Paper
+## Papers
 
 ### Thought2Text
 
 - [Thought2Text: Text Generation from EEG Signal using Large Language Models (LLMs)](https://arxiv.org/abs/2410.07507)
 - [Github: abhijitmishra/Thought2Text](https://github.com/abhijitmishra/Thought2Text)
-
-### Overview
-
-- [A systematic literature review of neuroimaging coupled with machine learning approaches for diagnosis of attention defcit hyperactivity disorder](https://link.springer.com/article/10.1186/s40537-024-00998-3)
 
 ### Single-modal
 
@@ -31,11 +27,8 @@ ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
   - 같은 데이터셋(IEEE) 사용
 
 - Enhanced ADHD detection: Frequency information embedded in a visual-language framework
-- EEGViT
 - SSRepL-ADHD: Adaptive Complex Representation Learning Framework for ADHD Detection from Visual Attention Tasks
 - Enhancing ADHD Diagnosis with EEG: The Critical Role of Preprocessing and Key Features
-- Deep Learning-Based Classification of ADHD Using Resting-State fMRI Data
-- Functional Brain Network Analysis for ADHD Classification Using Deep Learning and Resting-State fMRI
 
 ### Multi-modal
 
@@ -48,13 +41,11 @@ ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
 
 ## Datasets
 
-### EEG Data for ADHD
+### EEG for ADHD
 
-[IEEE ADHD-control-children](https://ieee-dataport.org/open-access/eeg-data-adhd-control-children)
-
-[OSF Deep-learning-EEG](https://osf.io/6594x/)
-
-[AI HUB](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=&topMenu=&aihubDataSe=ty&dataSetSn=71356)
+- [IEEE: ADHD-control-children](https://ieee-dataport.org/open-access/eeg-data-adhd-control-children)
+- [OSF: Deep-learning-EEG](https://osf.io/6594x/)
+- [AI HUB: 소아 뇌파 검사 데이터](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=&topMenu=&aihubDataSe=ty&dataSetSn=71356)
 
 ## Others
 

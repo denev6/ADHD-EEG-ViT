@@ -13,7 +13,13 @@ class EarlyStopping(object):
         self.__counter = 0
 
     def should_stop(self, loss: float, model: torch.nn.Module, epoch: int) -> bool:
-        """Check if training should stop"""
+        """Check if training should stop and save the check point if needed.
+
+        :param loss: Current validation loss.
+        :param model: Model to save (it will compare the model with prior saved model and save if better).
+        :param epoch: current epoch (will be used as check point if needed).
+        :return: True if training should stop, False otherwise.
+        """
         if loss < self._min_loss:
             self._min_loss = loss
             self.__counter = 0
@@ -41,7 +47,10 @@ class EarlyStopping(object):
 
 
 class WarmupScheduler(object):
-    """Warmup learning rate and dynamically adjusts learning rate based on training loss."""
+    """Warmup learning rate and dynamically adjusts learning rate based on validation loss.
+
+    When the loss increases, the learning rate will be divided by decay_factor.
+    """
 
     def __init__(
         self,
@@ -68,7 +77,10 @@ class WarmupScheduler(object):
             param_group["lr"] = self.initial_lr * (self.global_step / self.warmup_steps)
 
     def step(self, loss: float):
-        """Update learning rate based on current loss."""
+        """Update learning rate based on current loss.
+
+        :param loss: Current validation loss.
+        """
         self.global_step += 1
 
         if self.global_step <= self.warmup_steps:
@@ -110,21 +122,40 @@ def train(
     model_path: str,
     device: torch.device,
     optimizer: torch.optim.Optimizer,
-    grad_step: int,
     criterion: torch.nn.Module,
     epochs: int,
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
-    initial_lr: int,
-    min_lr=1e-8,
-    warmup_steps=10,
-    lr_decay_factor=10,
+    learning_rate: int,
+    gradient_step: int = 1,
+    min_lr: float = 1e-8,
+    warmup_steps: int = 1,
+    lr_decay_factor: int = 2,
     patience: int = 0,
 ):
-    """Train the model and return the best check point."""
+    """Train the model and return the best check point.
+
+    Batch accumulation, Early stopping, Warmup scheduler,
+    and Learning rate scheduler are included.
+
+    :param model: Model to train.
+    :param model_path: Path to save the best model.
+    :param device: Torch device (cpu or cuda).
+    :param optimizer: Optimizer for training.
+    :param criterion: Loss function.
+    :param epochs: Maximum number of epochs.
+    :param train_loader: Training data loader.
+    :param val_loader: Validation data loader.
+    :param learning_rate: Learning rate.
+    :param gradient_step: Set gradient_step=1 to disable gradient accumulation.
+    :param min_lr: Minimum learning rate (default: 1e-8).
+    :param warmup_steps: Set warmup_steps=1 to disable warmup (default).
+    :param lr_decay_factor: Learning rate decay factor (default: 2).
+    :param patience: Number of epochs to wait before early stopping (default: 0).
+    """
     epoch_trange = trange(1, epochs + 1)
     scheduler = WarmupScheduler(
-        optimizer, initial_lr, min_lr, warmup_steps, lr_decay_factor
+        optimizer, learning_rate, min_lr, warmup_steps, lr_decay_factor
     )
     early_stopper = EarlyStopping(patience, model_path)
 
@@ -142,11 +173,11 @@ def train(
             batch_loss = criterion(output, label)
             train_loss += batch_loss.item()
 
-            batch_loss /= grad_step
+            batch_loss /= gradient_step
             batch_loss.backward()
 
             # Gradient Accumulation
-            if batch_id % grad_step == 0:
+            if batch_id % gradient_step == 0:
                 optimizer.step()
                 model.zero_grad()
 
@@ -162,7 +193,7 @@ def train(
             break
 
         # Learning Rate Scheduling
-        scheduler.step(train_loss)
+        scheduler.step(val_loss)
 
     check_point = early_stopper.check_point
     tqdm.write(f"\n--Check point: [Epoch: {check_point}]")

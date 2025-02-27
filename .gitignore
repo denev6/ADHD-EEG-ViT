@@ -9,9 +9,7 @@ desktop.ini
 
 # Local
 __pycache__
-assets/IEEE/*train*.pt
-assets/IEEE/*val*.pt
-assets/IEEE/*test*.pt
+assets/IEEE/*.pt
 
 # Private
 p_*

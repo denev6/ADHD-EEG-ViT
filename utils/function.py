@@ -36,7 +36,7 @@ def evaluate(
 ):
     """Return metrics for test set
 
-    :returns metrics: { accuracy, f1-score, recall, auc, roc-curve(fpr, tpr) }
+    :returns metrics: { accuracy, f1-score, recall, auc }
     """
     model.eval()
     y_pred = list()
@@ -61,7 +61,6 @@ def evaluate(
             "f1-score": f1,
             "recall": recall,
             "auc": auc_value,
-            "roc-curve": (fpr, tpr),
         }
 
 
@@ -120,5 +119,5 @@ def log_json(file_path: str, *configs, **kwargs):
 
 def _safe_update_dict(d, k, v):
     if k in d:
-        raise ValueError(f"Duplicate key: {k}")
+        raise KeyError(f"Duplicate key: {k}")
     d[k] = v

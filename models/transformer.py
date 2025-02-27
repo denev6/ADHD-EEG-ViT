@@ -7,7 +7,7 @@ import torch.nn as nn
 class TransformerConfig:
     """Configuration for Transformer model.
 
-    :param embed_dim: embedding dimension
+    :param embed_dim: embedding dimension (if Transformer: same as input channel)
     :param num_heads: number of attention heads
     :param num_blocks: number of attention blocks
     :param block_hidden_dim: dimension of attention blocks
@@ -39,7 +39,7 @@ class AttentionBlock(nn.Module):
     def forward(self, input: torch.Tensor):
         torch._assert(
             input.shape[2] == self.embed_dim,
-            f"Input shape must be (batch_size, seq_len, {self.embed_dim})",
+            f"Input shape must be (batch_size, seq_len, {self.embed_dim}) in AttentionBlock.",
         )
 
         # Multi-head Attention
@@ -57,45 +57,46 @@ class AttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
+    """Transformer model for EEG signals."""
+
     def __init__(
         self,
-        input_channel,
-        seq_length,
-        embed_dim,
-        num_heads,
-        num_blocks,
-        block_hidden_dim,
-        fc_hidden_dim,
-        num_classes,
-        dropout_p=0.0,
-    ):
+        input_channel: int,
+        seq_length: int,
+        num_heads: int,
+        num_blocks: int,
+        block_hidden_dim: int,
+        fc_hidden_dim: int,
+        num_classes: int,
+        dropout_p: float = 0.0,
+    ) -> torch.Tensor:
         super(Transformer, self).__init__()
-        self.dropout_p = dropout_p
+        # signal channel == embedding dimension
         self.signal_channel = input_channel
         self.seq_length = seq_length
 
         # Embedding
         self.pos_embedding = nn.Parameter(
-            torch.empty(1, seq_length, embed_dim).normal_(std=0.02)
+            torch.empty(1, seq_length, self.signal_channel).normal_(std=0.02)
         )
 
         # Attention Blocks
         self.encoder = nn.ModuleList(
             [
-                AttentionBlock(embed_dim, num_heads, block_hidden_dim)
+                AttentionBlock(self.signal_channel, num_heads, block_hidden_dim)
                 for _ in range(num_blocks)
             ]
         )
 
         # Decoding layers
         self.global_max_pool = nn.Sequential(
-            nn.AdaptiveMaxPool1d(1), nn.Dropout(p=self.dropout_p)
+            nn.AdaptiveMaxPool1d(1), nn.Dropout(p=dropout_p)
         )
         self.fc = nn.Sequential(
             nn.Flatten(1, -1),
-            nn.Linear(embed_dim, fc_hidden_dim),
+            nn.Linear(self.signal_channel, fc_hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=self.dropout_p),
+            nn.Dropout(p=dropout_p),
             nn.Linear(fc_hidden_dim, num_classes),
         )
 
@@ -117,44 +118,37 @@ class Transformer(nn.Module):
 
 
 class ViTransformer(nn.Module):
+    """Vision Transformer model for EEG signals."""
+
     def __init__(
         self,
-        input_channel,
-        seq_length,
-        embed_dim,
-        num_heads,
-        num_blocks,
-        block_hidden_dim,
-        fc_hidden_dim,
-        num_classes,
-        dropout_p=0.0,
-    ):
+        input_channel: int,
+        seq_length: int,
+        embed_dim: int,
+        num_heads: int,
+        num_blocks: int,
+        block_hidden_dim: int,
+        fc_hidden_dim: int,
+        num_classes: int,
+        dropout_p: float = 0.0,
+    ) -> torch.Tensor:
+        """'input_channel' will be converted to 'embed_dim' through 1D convolution."""
         super(ViTransformer, self).__init__()
-        self.dropout_p = dropout_p
         self.signal_channel = input_channel
         self.seq_length = seq_length
 
         # Embedding
         self.proj = nn.Conv1d(self.signal_channel, embed_dim, kernel_size=3, padding=1)
 
-        self.pos_embedding = nn.Parameter(
-            torch.empty(1, seq_length, embed_dim).normal_(std=0.02)
-        )
-        self.encoder = nn.ModuleList(
-            [
-                AttentionBlock(embed_dim, num_heads, block_hidden_dim)
-                for _ in range(num_blocks)
-            ]
-        )
-        self.global_max_pool = nn.Sequential(
-            nn.AdaptiveMaxPool1d(1), nn.Dropout(p=self.dropout_p)
-        )
-        self.fc = nn.Sequential(
-            nn.Flatten(1, -1),
-            nn.Linear(embed_dim, fc_hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=self.dropout_p),
-            nn.Linear(fc_hidden_dim, num_classes),
+        self.transformer = Transformer(
+            embed_dim,
+            seq_length,
+            num_heads,
+            num_blocks,
+            block_hidden_dim,
+            fc_hidden_dim,
+            num_classes,
+            dropout_p,
         )
 
     def forward(self, input):
@@ -162,20 +156,9 @@ class ViTransformer(nn.Module):
             input.shape[1:] == (self.signal_channel, self.seq_length),
             f"Expected shape of (batch, {self.signal_channel}, {self.seq_length})",
         )
-        # x: (-1, embed_dim, seq_len)
         x = self.proj(input)
-
-        # Self-attention requires shape of (-1, seq_len, embed_dim)
         x = x.permute(0, 2, 1)
-        x = x + self.pos_embedding
-
-        for layer in self.encoder:
-            x = layer(x)
-
-        x = x.permute(0, 2, 1)
-        # x: (-1, embed_dim, seq_len)
-        x = self.global_max_pool(x)
-        x = self.fc(x)
+        x = self.transformer(x)
         return x
 
 
@@ -186,7 +169,6 @@ if __name__ == "__main__":
     model = Transformer(
         input_channel=56,
         seq_length=385,
-        embed_dim=56,
         num_heads=4,
         num_blocks=6,
         num_classes=3,

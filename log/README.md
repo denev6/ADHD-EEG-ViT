@@ -1,6 +1,6 @@
-# About Logs
+# Logs
 
-## tag
+## Tag
 
 ### IEEE_22
 
@@ -16,16 +16,13 @@
   - **Train:** 70% → Shape: `[121, 19, 9250]`  
   - **Validation:** 10% → Shape: `[17, 19, 9250]`  
   - **Test:** 20% → Shape: `[36, 19, 9250]` 
-- Detection of ADHD from EEG signals using new hybrid decomposition and deep learning techniques, 2023.
+-  Detection of ADHD from EEG signals using new hybrid decomposition and deep learning techniques, 2023.
 
-## models
+## Models
 
-### Transformer
+### EEG-Transformer + ViT
 
-- Reference: Detection of ADHD from EEG signals using new hybrid decomposition and deep learning techniques, 2023.
-
-### ViTransformer
-
-- Transformer(above) + Conv1d embedding
-- Instead of a CLS token, data classification leverages the entire set of vectors.
-- Reference: An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale, 2021.
+- `EEG-Transformer`: Classification of attention deficit/hyperactivity disorder based on EEG signals using a EEG-Transformer model, 2023.
+- `ViT`: An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale, 2021.
+- Transformer(EEG-Transformer) + Conv1d embedding(ViT)
+- Instead of a CLS token(ViT), data classification leverages the entire set of vectors(EEG-Transformer).

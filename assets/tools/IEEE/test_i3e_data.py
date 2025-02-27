@@ -14,11 +14,9 @@ class I3ETestCase(unittest.TestCase):
         with open(os.path.join(data_dir, "metadata.json"), "r") as file:
             cls.META = json.load(file)
 
-        trainset = torch.load(
-            os.path.join(data_dir, "ieee_train.pt"), weights_only=True
-        )
-        valset = torch.load(os.path.join(data_dir, "ieee_val.pt"), weights_only=True)
-        testset = torch.load(os.path.join(data_dir, "ieee_test.pt"), weights_only=True)
+        trainset = torch.load(os.path.join(data_dir, "train.pt"), weights_only=True)
+        valset = torch.load(os.path.join(data_dir, "val.pt"), weights_only=True)
+        testset = torch.load(os.path.join(data_dir, "test.pt"), weights_only=True)
         cls.DATASETS = {
             "train": trainset,
             "val": valset,
@@ -49,6 +47,18 @@ class I3ETestCase(unittest.TestCase):
                 zeros + ones,
                 labels.size()[0],
                 f"Label should only contain 0 and 1 ({name}-set)",
+            )
+
+    def test_data_is_balanced(self):
+        for name, dataset in self.DATASETS.items():
+            labels = dataset["label"]
+            zeros = torch.sum(labels == 0).item()
+            ones = torch.sum(labels == 1).item()
+            diff = abs(zeros - ones)
+            allowed_diff = labels.size(0) * 0.2
+            self.assertTrue(
+                diff <= allowed_diff,
+                f"Data is not balanced ({name}-set)",
             )
 
 

@@ -23,13 +23,13 @@ class EEGDataset(Dataset):
 
 
 @dataclass(frozen=True)
-class IEEEData:
+class IEEEDataConfig:
     """Constants for IEEE dataset."""
 
-    tag = "IEEE_23"
-    train = "ieee_train.pt"
-    test = "ieee_test.pt"
-    val = "ieee_val.pt"
-    channels = 19
-    length = 2560
-    num_classes = 2
+    tag: str = "IEEE_23"
+    train: str = "train.pt"
+    test: str = "test.pt"
+    val: str = "val.pt"
+    channels: int = 19
+    length: int = 9250
+    num_classes: int = 2
