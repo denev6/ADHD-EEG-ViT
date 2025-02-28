@@ -1,3 +1,6 @@
-- AMP + batch 키우기
+- SGD with momentum (0.9)
+- Cross validation
+- Gradient Clipping
+- Data Augmentation
 - Pretrained ViT 학습
 - LLM 결합 구현

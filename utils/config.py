@@ -21,6 +21,7 @@ class Config:
     :param batch: batch size
     :param epochs: number of epochs
     :param lr: learning rate
+    :param enable_fp16: whether to use FP16 precision
     :param grad_step: number of gradient accumulation steps
     :param warmup_steps: number of warmup steps
     :param lr_decay_factor: learning rate decay factor
@@ -34,10 +35,11 @@ class Config:
     batch: int
     epochs: int
     lr: float
-    grad_step: int = field(default=1)
+    enable_fp16: Optional[bool] = field(default=False)
+    grad_step: Optional[int] = field(default=1)
     warmup_steps: Optional[int] = field(default=None)
-    lr_decay_factor: int = field(default=10)
-    weight_decay: Optional[float] = field(default=1e-4)
+    lr_decay_factor: Optional[float] = field(default=None)
+    weight_decay: Optional[float] = field(default=None)
     patience: Optional[int] = field(default=0)
 
     def __post_init__(self):

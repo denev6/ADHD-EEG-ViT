@@ -4,7 +4,7 @@ ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
 
 ## Keywords
 
-- ADHD
+- Children ADHD
 - EEG
 - Vision Transformer
 - Large Language model

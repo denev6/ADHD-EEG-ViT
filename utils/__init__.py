@@ -1,8 +1,7 @@
 from .config import *
 from .data import *
 from .function import *
-from .training import train
-
+from .training import train, WarmupScheduler
 
 __all__ = [
     # config
@@ -19,5 +18,6 @@ __all__ = [
     "fix_random_seed",
     "log_json",
     # training
+    "WarmupScheduler",
     "train",
 ]

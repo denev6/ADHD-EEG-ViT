@@ -27,9 +27,9 @@ class IEEEDataConfig:
     """Constants for IEEE dataset."""
 
     tag: str = "IEEE_23"
-    train: str = "train.pt"
-    test: str = "test.pt"
-    val: str = "val.pt"
+    train: str = "ieee_train.pt"
+    test: str = "ieee_test.pt"
+    val: str = "ieee_val.pt"
     channels: int = 19
     length: int = 9250
     num_classes: int = 2

@@ -22,6 +22,7 @@
 
 ### EEG-Transformer + ViT
 
+- Trained model: "ieee-transformer_250228075729819009"
 - `EEG-Transformer`: Classification of attention deficit/hyperactivity disorder based on EEG signals using a EEG-Transformer model, 2023.
 - `ViT`: An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale, 2021.
 - Transformer(EEG-Transformer) + Conv1d embedding(ViT)

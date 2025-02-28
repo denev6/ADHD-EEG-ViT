@@ -1,4 +1,6 @@
 import torch
+from torch import autocast
+from torch.amp import GradScaler
 from tqdm.auto import tqdm, trange
 
 
@@ -55,19 +57,29 @@ class WarmupScheduler(object):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
-        initial_lr: float,
-        min_lr=1e-6,
-        warmup_steps=10,
-        decay_factor=10,
+        lr: float,
+        min_lr:float =1e-6,
+        warmup_steps:int =10,
+        decay_factor:float =0.1,
     ):
+        """Initialize Warmup Scheduler.
+
+        :param optimizer: Optimizer for training.
+        :param lr: Learning rate.
+        :param min_lr: Minimum learning rate.
+        :param warmup_steps: Number of warmup steps.
+        :param decay_factor: Factor to multiply learning rate when loss increases.
+        """
         self.optimizer = optimizer
-        self.initial_lr = initial_lr
+        self.initial_lr = lr
         self.min_lr = min_lr
-        self.warmup_steps = warmup_steps
         self.decay_factor = decay_factor
 
-        assert self.warmup_steps > 0, "Warmup steps must be greater than 0"
-        assert self.decay_factor > 1, "Decay factor must be greater than 1"
+        # If user set warmup_steps=0, then set warmup_steps=1 to avoid ZeroDivisionError.
+        self.warmup_steps = max(warmup_steps, 1)
+
+        assert self.initial_lr >= self.min_lr, f"Learning rate must be greater than min_lr({self.min_lr})"
+        assert 0 < self.decay_factor < 1, "Decay factor must be less than 1.0."
 
         self.global_step = 1
         self.best_loss = float("inf")
@@ -92,7 +104,7 @@ class WarmupScheduler(object):
             # Check if loss increased
             if loss > self.best_loss:
                 for param_group in self.optimizer.param_groups:
-                    new_lr = max(param_group["lr"] / self.decay_factor, self.min_lr)
+                    new_lr = max(param_group["lr"] * self.decay_factor, self.min_lr)
                     param_group["lr"] = new_lr
             self.best_loss = min(self.best_loss, loss)
 
@@ -119,19 +131,17 @@ def validate(model, device, criterion, val_loader):
 
 def train(
     model: torch.nn.Module,
+        device: torch.device,
     model_path: str,
-    device: torch.device,
     optimizer: torch.optim.Optimizer,
     criterion: torch.nn.Module,
     epochs: int,
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
-    learning_rate: int,
     gradient_step: int = 1,
-    min_lr: float = 1e-8,
-    warmup_steps: int = 1,
-    lr_decay_factor: int = 2,
     patience: int = 0,
+    enable_fp16: bool = False,
+    scheduler = None,
 ):
     """Train the model and return the best check point.
 
@@ -146,54 +156,64 @@ def train(
     :param epochs: Maximum number of epochs.
     :param train_loader: Training data loader.
     :param val_loader: Validation data loader.
-    :param learning_rate: Learning rate.
     :param gradient_step: Set gradient_step=1 to disable gradient accumulation.
-    :param min_lr: Minimum learning rate (default: 1e-8).
-    :param warmup_steps: Set warmup_steps=1 to disable warmup (default).
-    :param lr_decay_factor: Learning rate decay factor (default: 2).
     :param patience: Number of epochs to wait before early stopping (default: 0).
+    :param enable_fp16: Enable FP16 precision training (default: False).
+    :param scheduler: Learning rate scheduler (default: None).
     """
+    if enable_fp16:
+        assert torch.amp.autocast_mode.is_autocast_available(str(device)), "Unable to use autocast on current device."
+    if scheduler is not None:
+        assert callable(getattr(scheduler, "step", None)), "Scheduler must have a step() method."
+
     epoch_trange = trange(1, epochs + 1)
-    scheduler = WarmupScheduler(
-        optimizer, learning_rate, min_lr, warmup_steps, lr_decay_factor
-    )
     early_stopper = EarlyStopping(patience, model_path)
+    scaler = GradScaler(device=str(device), enabled=enable_fp16)
+
+    model.to(device)
+    criterion.to(device)
 
     model.zero_grad()
 
-    for epoch_id in epoch_trange:
+    for epoch_idx in epoch_trange:
         model.train()
         train_loss = 0
         for batch_id, (data, label) in enumerate(train_loader, start=1):
-
             data = data.to(device)
             label = label.to(device)
-            output = model(data)
 
-            batch_loss = criterion(output, label)
+            with autocast(device_type=str(device), enabled=enable_fp16, dtype=torch.float16):
+                output = model(data)
+                batch_loss = criterion(output, label)
+
             train_loss += batch_loss.item()
 
-            batch_loss /= gradient_step
-            batch_loss.backward()
+            # Scale loss to prevent under/overflow
+            scaler.scale(batch_loss / gradient_step).backward()
 
             # Gradient Accumulation
             if batch_id % gradient_step == 0:
-                optimizer.step()
-                model.zero_grad()
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
 
         # Validate Training Epoch
         train_loss /= len(train_loader)
-        val_loss = validate(model, device, criterion, val_loader)
+        val_loss = validate(model, torch.device("cuda"), criterion, val_loader)
         tqdm.write(
-            f"Epoch {epoch_id}, Train-Loss: {train_loss:.5f},  Val-Loss: {val_loss:.5f}"
+            f"Epoch {epoch_idx}, Train-Loss: {train_loss:.5f},  Val-Loss: {val_loss:.5f}"
         )
 
         # Early stopping
-        if early_stopper.should_stop(val_loss, model, epoch_id):
+        if early_stopper.should_stop(val_loss, model, epoch_idx):
             break
 
         # Learning Rate Scheduling
-        scheduler.step(val_loss)
+        if scheduler is not None :
+            if isinstance(scheduler, WarmupScheduler):
+                scheduler.step(val_loss)
+            else:
+                scheduler.step(epoch_idx)
 
     check_point = early_stopper.check_point
     tqdm.write(f"\n--Check point: [Epoch: {check_point}]")

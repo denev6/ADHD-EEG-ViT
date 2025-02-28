@@ -4,6 +4,7 @@ import gc
 import warnings
 from dataclasses import is_dataclass, asdict
 import torch
+from torch.amp import autocast
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_curve, auc
 import matplotlib.pyplot as plt
@@ -29,39 +30,59 @@ def device(force_cuda=True) -> torch.device:
     return torch.device("cuda") if has_cuda else torch.device("cpu")
 
 
+def inference(
+    model: torch.nn.Module,
+    device: torch.device,
+    data_loader: torch.utils.data.DataLoader,
+    enable_fp16: bool = False,
+):
+    """Return the output of the model
+
+    :returns y_pred, y_true: array of predicted labels and true labels
+    """
+    # FP16 precision
+    if enable_fp16:
+        assert torch.amp.autocast_mode.is_autocast_available(str(device)), "Unable to use autocast on current device."
+
+    with torch.no_grad():
+        with autocast(device_type=str(device), enabled=enable_fp16, dtype=torch.float16):
+            model.eval()
+            y_pred = list()
+            y_true = list()
+            for data, label in data_loader:
+                data = data.to(device)
+                output = model(data)
+
+                y_pred.extend(output.argmax(1).detach().cpu().numpy())
+                y_true.extend(label.numpy())
+
+            return y_pred, y_true
+
+
 def evaluate(
     model: torch.nn.Module,
     device: torch.device,
     data_loader: torch.utils.data.DataLoader,
+    enable_fp16: bool = False,
 ):
     """Return metrics for test set
 
     :returns metrics: { accuracy, f1-score, recall, auc }
     """
-    model.eval()
-    y_pred = list()
-    y_true = list()
+    y_pred, y_true = inference(model, device, data_loader, enable_fp16)
 
-    with torch.no_grad():
-        for data, label in data_loader:
-            data = data.to(device)
-            output = model(data)
+    accuracy = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    fpr, tpr, _ = roc_curve(y_true, y_pred)
+    auc_value = auc(fpr, tpr)
 
-            y_pred.extend(output.argmax(1).detach().cpu().numpy())
-            y_true.extend(label.numpy())
-
-        accuracy = accuracy_score(y_true, y_pred)
-        f1 = f1_score(y_true, y_pred)
-        recall = recall_score(y_true, y_pred)
-        fpr, tpr, _ = roc_curve(y_true, y_pred)
-        auc_value = auc(fpr, tpr)
-
-        return {
-            "accuracy": accuracy,
-            "f1-score": f1,
-            "recall": recall,
-            "auc": auc_value,
-        }
+    return {
+        "accuracy": accuracy,
+        "f1-score": f1,
+        "recall": recall,
+        "auc": auc_value,
+    }
 
 
 # Visualize
