@@ -1,6 +1,8 @@
 import torch
 from torch import autocast
 from torch.amp import GradScaler
+from torch.utils.data import Subset, DataLoader
+from sklearn.model_selection import KFold
 from tqdm.auto import tqdm, trange
 
 
@@ -47,6 +49,10 @@ class EarlyStopping(object):
             raise ValueError("No check point is saved!")
         return self.__check_point
 
+    @property
+    def best_loss(self):
+        return self._min_loss
+
 
 class WarmupScheduler(object):
     """Warmup learning rate and dynamically adjusts learning rate based on validation loss.
@@ -58,9 +64,9 @@ class WarmupScheduler(object):
         self,
         optimizer: torch.optim.Optimizer,
         lr: float,
-        min_lr:float =1e-6,
-        warmup_steps:int =10,
-        decay_factor:float =0.1,
+        min_lr: float = 1e-6,
+        warmup_steps: int = 10,
+        decay_factor: float = 0.1,
     ):
         """Initialize Warmup Scheduler.
 
@@ -78,7 +84,9 @@ class WarmupScheduler(object):
         # If user set warmup_steps=0, then set warmup_steps=1 to avoid ZeroDivisionError.
         self.warmup_steps = max(warmup_steps, 1)
 
-        assert self.initial_lr >= self.min_lr, f"Learning rate must be greater than min_lr({self.min_lr})"
+        assert (
+            self.initial_lr >= self.min_lr
+        ), f"Learning rate must be greater than min_lr({self.min_lr})"
         assert 0 < self.decay_factor < 1, "Decay factor must be less than 1.0."
 
         self.global_step = 1
@@ -129,9 +137,9 @@ def validate(model, device, criterion, val_loader):
         return val_loss / len(val_loader)
 
 
-def train(
+def _train(
     model: torch.nn.Module,
-        device: torch.device,
+    device: torch.device,
     model_path: str,
     optimizer: torch.optim.Optimizer,
     criterion: torch.nn.Module,
@@ -141,30 +149,12 @@ def train(
     gradient_step: int = 1,
     patience: int = 0,
     enable_fp16: bool = False,
-    scheduler = None,
+    scheduler=None,
 ):
-    """Train the model and return the best check point.
-
-    Batch accumulation, Early stopping, Warmup scheduler,
-    and Learning rate scheduler are included.
-
-    :param model: Model to train.
-    :param model_path: Path to save the best model.
-    :param device: Torch device (cpu or cuda).
-    :param optimizer: Optimizer for training.
-    :param criterion: Loss function.
-    :param epochs: Maximum number of epochs.
-    :param train_loader: Training data loader.
-    :param val_loader: Validation data loader.
-    :param gradient_step: Set gradient_step=1 to disable gradient accumulation.
-    :param patience: Number of epochs to wait before early stopping (default: 0).
-    :param enable_fp16: Enable FP16 precision training (default: False).
-    :param scheduler: Learning rate scheduler (default: None).
-    """
-    if enable_fp16:
-        assert torch.amp.autocast_mode.is_autocast_available(str(device)), "Unable to use autocast on current device."
     if scheduler is not None:
-        assert callable(getattr(scheduler, "step", None)), "Scheduler must have a step() method."
+        assert callable(
+            getattr(scheduler, "step", None)
+        ), "Scheduler must have a step() method."
 
     epoch_trange = trange(1, epochs + 1)
     early_stopper = EarlyStopping(patience, model_path)
@@ -182,7 +172,9 @@ def train(
             data = data.to(device)
             label = label.to(device)
 
-            with autocast(device_type=str(device), enabled=enable_fp16, dtype=torch.float16):
+            with autocast(
+                device_type=str(device), enabled=enable_fp16, dtype=torch.float16
+            ):
                 output = model(data)
                 batch_loss = criterion(output, label)
 
@@ -209,13 +201,164 @@ def train(
             break
 
         # Learning Rate Scheduling
-        if scheduler is not None :
+        if scheduler is not None:
             if isinstance(scheduler, WarmupScheduler):
                 scheduler.step(val_loss)
             else:
                 scheduler.step(epoch_idx)
 
-    check_point = early_stopper.check_point
-    tqdm.write(f"\n--Check point: [Epoch: {check_point}]")
+    return early_stopper.check_point, early_stopper.best_loss
 
+
+def train(
+    model: torch.nn.Module,
+    device: torch.device,
+    model_path: str,
+    optimizer: torch.optim.Optimizer,
+    criterion: torch.nn.Module,
+    epochs: int,
+    train_loader: torch.utils.data.DataLoader,
+    val_loader: torch.utils.data.DataLoader,
+    gradient_step: int = 1,
+    patience: int = 0,
+    enable_fp16: bool = False,
+    scheduler=None,
+):
+    """Train the model and return the best check point.
+
+    Batch accumulation, Early stopping, Warmup scheduler,
+    and Learning rate scheduler are included.
+
+    :param model: Model to train.
+    :param model_path: Path to save the best model.
+    :param device: Torch device (cpu or cuda).
+    :param optimizer: Optimizer for training.
+    :param criterion: Loss function.
+    :param epochs: Maximum number of epochs.
+    :param train_loader: Training data loader.
+    :param val_loader: Validation data loader.
+    :param gradient_step: Set gradient_step=1 to disable gradient accumulation.
+    :param patience: Number of epochs to wait before early stopping (default: 0).
+    :param enable_fp16: Enable FP16 precision training (default: False).
+    :param scheduler: Learning rate scheduler (default: None).
+    """
+    if enable_fp16:
+        assert torch.amp.autocast_mode.is_autocast_available(
+            str(device)
+        ), "Unable to use autocast on current device."
+
+    check_point, _ = _train(
+        model,
+        device,
+        model_path,
+        optimizer,
+        criterion,
+        epochs,
+        train_loader,
+        val_loader,
+        gradient_step,
+        patience,
+        enable_fp16,
+        scheduler,
+    )
     return check_point
+
+
+def train_with_kfold(
+    k_folds: int,
+    model_class: torch.nn,
+    device: torch.device,
+    model_path: str,
+    optimizer_class: torch.optim,
+    criterion: torch.nn.Module,
+    epochs: int,
+    train_dataset: torch.utils.data.Dataset,
+    batch: int,
+    model_params: dict = None,
+    optimizer_params: dict = None,
+    gradient_step: int = 1,
+    patience: int = 0,
+    enable_fp16: bool = False,
+    scheduler_class=None,
+    scheduler_params: dict = None,
+):
+    """Train the model and return the best check point.
+
+    Batch accumulation, Early stopping, Warmup scheduler,
+    and Learning rate scheduler are included.
+
+    :param k_folds: Number of folds for K-fold cross validation.
+    :param model_class: Model class to train.
+    :param model_params: Parameters for 'model_class'.
+    :param model_path: Path to save the best model.
+    :param device: Torch device (cpu or cuda).
+    :param optimizer_class: Optimizer class for training.
+    :param optimizer_params: Parameters for 'optimizer_class'. model.parameters will be called automatically.
+    :param criterion: Loss function.
+    :param epochs: Maximum number of epochs.
+    :param train_dataset: Training data set.
+    :param batch: Batch size for training.
+    :param gradient_step: Set gradient_step=1 to disable gradient accumulation.
+    :param patience: Number of epochs to wait before early stopping (default: 0).
+    :param enable_fp16: Enable FP16 precision training (default: False).
+    :param scheduler_class: Learning rate scheduler class. optimizer will be called automatically. (default: None).
+    :param scheduler_params: Parameters for 'scheduler_class'.  (default: None).
+    """
+    if enable_fp16:
+        assert torch.amp.autocast_mode.is_autocast_available(
+            str(device)
+        ), "Unable to use autocast on current device."
+
+    kf = KFold(n_splits=k_folds, shuffle=True)
+    best_fold = 0
+    best_check_point = 0
+    best_val_loss = float("inf")
+    model_name, ext = model_path.rsplit(".", 1)
+
+    for fold, (train_idx, val_idx) in enumerate(kf.split(train_dataset), start=1):
+        torch.cuda.empty_cache()
+        print(f"\n===== Fold {fold} =====")
+
+        train_dataset_fold = Subset(train_dataset, train_idx)
+        val_dataset_fold = Subset(train_dataset, val_idx)
+        train_loader = DataLoader(train_dataset_fold, batch_size=batch, shuffle=True)
+        val_loader = DataLoader(val_dataset_fold, batch_size=batch, shuffle=False)
+        model_path = f"{model_name}_{fold}.{ext}"
+
+        if model_params is None:
+            model_params = {}
+        if optimizer_params is None:
+            optimizer_params = {}
+
+        model = model_class(**model_params)
+        optimizer = optimizer_class(model.parameters(), **optimizer_params)
+
+        if scheduler_class is not None:
+            if scheduler_params is None:
+                scheduler_params = {}
+            scheduler = scheduler_class(optimizer, **scheduler_params)
+        else:
+            scheduler = None
+
+        check_point, val_loss = _train(
+            model,
+            device,
+            model_path,
+            optimizer,
+            criterion,
+            epochs,
+            train_loader,
+            val_loader,
+            gradient_step,
+            patience,
+            enable_fp16,
+            scheduler,
+        )
+
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_check_point = check_point
+            best_fold = fold
+
+    best_model_path = f"{model_name}_{best_fold}.{ext}"
+    return best_check_point, best_model_path

@@ -1,6 +1,6 @@
 # Leveraging Large Language Models for ADHD Diagnosis: An EEG-Based Approach
 
-ADHD 진단을 위해 대규모 언어 모델 활용: EEG 기반 접근
+ADHD 진단을 위한 대규모 언어 모델 활용: EEG 기반 접근
 
 ## Keywords
 

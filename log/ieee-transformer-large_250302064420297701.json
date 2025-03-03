@@ -1,0 +1,41 @@
+{
+  "config": {
+    "id": "250302064420297701",
+    "name": "ieee-transformer-large",
+    "model_path": "/content/drive/MyDrive/log/ieee-transformer-large_250302064420297701_2.pt",
+    "batch": 8,
+    "epochs": 42,
+    "lr": 0.001,
+    "enable_fp16": true,
+    "grad_step": 4,
+    "warmup_steps": 30,
+    "lr_decay_factor": 0.5,
+    "weight_decay": 0.0001,
+    "patience": 30,
+    "k_folds": 5
+  },
+  "data": {
+    "tag": "IEEE_23",
+    "train": "ieee_train.pt",
+    "test": "ieee_test.pt",
+    "val": "ieee_val.pt",
+    "channels": 19,
+    "length": 9250,
+    "num_classes": 2
+  },
+  "model": {
+    "embed_dim": 64,
+    "num_heads": 4,
+    "num_blocks": 6,
+    "block_hidden_dim": 256,
+    "fc_hidden_dim": 32,
+    "dropout": 0.1
+  },
+  "metrics": {
+    "accuracy": 0.9444444444444444,
+    "f1-score": 0.9523809523809523,
+    "recall": 0.9523809523809523,
+    "auc": 0.9428571428571428
+  },
+  "_comment": "Larger model seems less accurate, but validation loss became stable enough."
+}

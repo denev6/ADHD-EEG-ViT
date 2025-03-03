@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 
 def _time_stamp():
@@ -27,6 +27,12 @@ class Config:
     :param lr_decay_factor: learning rate decay factor
     :param weight_decay: weight decay
     :param patience: patience for early stopping
+
+    Example:
+    >>> config = Config(name="CNN", batch=4, epochs=5, lr=0.01)
+    >>> config.add(optimizer="SGD")
+    >>> config.optimizer
+    'SGD'
     """
 
     id: str = field(init=False)
@@ -53,3 +59,15 @@ class Config:
             raise ValueError("epochs must be positive integer.")
         if self.lr < 0:
             raise ValueError("lr must be positive float.")
+
+    def add(self, **kwargs):
+        """Add extra attributes
+
+        :raises KeyError: if the key already exists in the config.
+        """
+        for k, v in kwargs.items():
+            if k in self.__dict__.keys():
+                raise KeyError(f"Duplicate key: {k}")
+            object.__setattr__(self, k, v)
+
+

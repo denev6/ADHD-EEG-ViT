@@ -4,8 +4,10 @@ from torch.utils.data import Dataset
 
 
 class EEGDataset(Dataset):
-    def __init__(self, file_path):
-        self.dataset = torch.load(file_path)
+    def __init__(self, data):
+        if isinstance(data, str):
+            data = torch.load(data, weights_only=True)
+        self.dataset = data
         self.eeg = self.dataset["data"]
         self.labels = self.dataset["label"]
 

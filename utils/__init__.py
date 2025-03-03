@@ -1,7 +1,7 @@
 from .config import *
 from .data import *
 from .function import *
-from .training import train, WarmupScheduler
+from .training import train, train_with_kfold, WarmupScheduler
 
 __all__ = [
     # config
@@ -14,10 +14,12 @@ __all__ = [
     "clear_cache",
     "device",
     "evaluate",
+    "plot_roc",
     "ignore_warnings",
     "fix_random_seed",
     "log_json",
     # training
     "WarmupScheduler",
     "train",
+    "train_with_kfold",
 ]

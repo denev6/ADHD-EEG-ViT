@@ -1,14 +1,14 @@
 import unittest
 from unittest.mock import patch
 import posixpath
-from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
 import torch.optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import TensorDataset
 from torch.amp import is_autocast_available
 
+from .config import *
 from .function import *
 from .training import *
 
@@ -47,7 +47,7 @@ class TestFunction(unittest.TestCase):
         dataset = TensorDataset(inputs, true_labels)
         dataloader = DataLoader(dataset, batch_size=5)
         model = Model()
-        metrics = evaluate(model, torch.device("cpu"), dataloader)
+        metrics = evaluate(model, device(), dataloader)
         self.assertAlmostEqual(
             expected_metrics["accuracy"], metrics["accuracy"], delta=delta
         )
@@ -66,32 +66,76 @@ class TestFunction(unittest.TestCase):
         class Config:
             A: int = 1
 
-        class WrongConfig:
-            pass
-
-        log_dict = {"C": 3}
-        wrong_log_dict = {"A": 3}
+        log_dict = {"C": 3, "D": None}
+        wrong_log_dict = {"A": 5, "C": 5}
+        config_dict = {"config": Config()}
 
         json_path = "dummy_log.json"
         try:
-            logs = log_json(json_path, Config(), **log_dict)
+            logs = log_json(json_path, Config())
+            self.assertIn("A", logs.keys(), "Dataclass attributes not included.")
+
+            logs = log_json(json_path, **config_dict, c=Config())
             self.assertIsInstance(logs, dict, "Logs should be a dictionary.")
+            self.assertNotIn("D", logs.keys(), "null value should be ignored.")
 
             with self.assertRaises(AssertionError):
                 # Not a json format
-                log_json("aaa.yaml", Config(), **log_dict)
+                log_json("aaa.yaml", **config_dict, **log_dict)
 
-            with self.assertRaises(ValueError):
-                # Not a dataclass
-                log_json(json_path, WrongConfig(), **log_dict)
+            with self.assertRaises(TypeError):
+                # Duplicate keyword arguments
+                log_json(json_path, **log_dict, **wrong_log_dict)
 
             with self.assertRaises(KeyError):
-                # Duplicate keys
+                # Duplicate keys in dataclass
                 log_json(json_path, Config(), **wrong_log_dict)
 
         finally:
             if os.path.exists(json_path):
                 os.remove(json_path)
+
+
+class TestConfig(unittest.TestCase):
+    def test_config(self):
+        name = "test_config"
+        config = Config(
+            name=name,
+            batch=4,
+            epochs=5,
+            lr=0.01,
+        )
+        self.assertEqual(config.name, name, "Config name mismatch")
+        self.assertTrue(hasattr(config, "id"), "Config.id not initialized")
+
+        config = Config(
+            name=name,
+            batch=4,
+            epochs=5,
+            lr=0.01,
+        )
+        config.add(optimizer=torch.optim.Adam)
+        self.assertTrue(hasattr(config, "optimizer"), "Extra attributes not saved")
+
+        with self.assertRaises(KeyError):
+            # Duplicate keys in dataclass
+            config = Config(
+                name=name,
+                batch=4,
+                epochs=5,
+                lr=0.01,
+            )
+            config.add(id=1)
+
+        with self.assertRaises(TypeError):
+            # Unexpected Arguments
+            Config(
+                name=name,
+                batch=4,
+                epochs=5,
+                lr=0.01,
+                something=0
+            )
 
 
 class TestTraining(unittest.TestCase):
@@ -104,8 +148,8 @@ class TestTraining(unittest.TestCase):
 
             def forward(self, x):
                 return self.fc(x)
-        return Model()
 
+        return Model
 
     def test_internal_get_2d_tensor_dataset(self):
         dataset = self._get_2d_tensor_dataset()
@@ -115,7 +159,9 @@ class TestTraining(unittest.TestCase):
         self.assertIsInstance(data_tensor, torch.FloatTensor)
         self.assertIsInstance(label_tensor, torch.LongTensor)
         self.assertEqual(
-            data_tensor.size(0), label_tensor.size(0), "Data and label tensors have different shapes"
+            data_tensor.size(0),
+            label_tensor.size(0),
+            "Data and label tensors have different shapes",
         )
         self.assertEqual(
             data_tensor.size(1), 2, "Data tensor has incorrect number of features"
@@ -158,10 +204,12 @@ class TestTraining(unittest.TestCase):
         warmup_steps = 3
         losses = [5, 4, 3, 5, 6]
         expected_lr = [100, 200, 300, 300, 30, 3]
-        model = self._get_2d_model()
+        model = self._get_2d_model()()
 
         optimizer = torch.optim.SGD(model.parameters(), initial_lr)
-        scheduler = WarmupScheduler(optimizer, initial_lr, warmup_steps=warmup_steps, decay_factor=0.1)
+        scheduler = WarmupScheduler(
+            optimizer, initial_lr, warmup_steps=warmup_steps, decay_factor=0.1
+        )
 
         for i, loss in enumerate(losses):
             current_lr = scheduler.get_lr()[0]
@@ -183,13 +231,12 @@ class TestTraining(unittest.TestCase):
         dataset = TensorDataset(inputs.float(), true_labels.long())
         return dataset
 
-
     def test_training(self):
         dataset = self._get_2d_tensor_dataset()
         train_dataloader = DataLoader(dataset, batch_size=5)
         val_dataloader = DataLoader(dataset, batch_size=5)
 
-        model = self._get_2d_model()
+        model = self._get_2d_model()()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
         criterion = nn.CrossEntropyLoss()
         model_path = "dummy_model.pt"
@@ -216,7 +263,7 @@ class TestTraining(unittest.TestCase):
         train_dataloader = DataLoader(dataset, batch_size=5)
         val_dataloader = DataLoader(dataset, batch_size=5)
 
-        model = self._get_2d_model()
+        model = self._get_2d_model()()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
         criterion = nn.CrossEntropyLoss()
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
@@ -246,7 +293,7 @@ class TestTraining(unittest.TestCase):
         train_dataloader = DataLoader(dataset, batch_size=5)
         val_dataloader = DataLoader(dataset, batch_size=5)
 
-        model = self._get_2d_model()
+        model = self._get_2d_model()()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
         criterion = nn.CrossEntropyLoss()
         model_path = "dummy_model.pt"
@@ -268,6 +315,37 @@ class TestTraining(unittest.TestCase):
         finally:
             if os.path.exists(model_path):
                 os.remove(model_path)
+
+    def test_training__with_kfold(self):
+        dataset = self._get_2d_tensor_dataset()
+        model = self._get_2d_model()
+        optimizer = torch.optim.SGD
+        optimizer_params = {"lr": 1e-3}
+        criterion = nn.CrossEntropyLoss()
+        model_path = "dummy_model.pt"
+        epochs = 1
+        k_folds = 3
+
+        try:
+            check_point, best_model = train_with_kfold(
+                k_folds,
+                model,
+                device(),
+                model_path,
+                optimizer,
+                criterion,
+                epochs,
+                dataset,
+                batch=5,
+                optimizer_params=optimizer_params,
+            )
+            self.assertIsInstance(check_point, int)
+        finally:
+            for i in range(k_folds):
+                model_path = f"dummy_model_{i+1}.pt"
+                if os.path.exists(model_path):
+                    os.remove(model_path)
+
 
 if __name__ == "__main__":
     unittest.main()
