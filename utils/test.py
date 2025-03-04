@@ -129,13 +129,7 @@ class TestConfig(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             # Unexpected Arguments
-            Config(
-                name=name,
-                batch=4,
-                epochs=5,
-                lr=0.01,
-                something=0
-            )
+            Config(name=name, batch=4, epochs=5, lr=0.01, something=0)
 
 
 class TestTraining(unittest.TestCase):

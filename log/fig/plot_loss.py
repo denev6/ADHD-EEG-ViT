@@ -28,7 +28,7 @@ plt.figure(figsize=(8, 6))
 plt.plot(x, trains, "-", color="blue", label="Training Loss")
 plt.plot(x[:check_point], vals[:check_point], "-", color="red", label="Validation Loss")
 plt.plot(x[check_point:], vals[check_point:], "--", color="red")
-plt.scatter(x[check_point-1], vals[check_point-1], color="red", label="Check Point")
+plt.scatter(x[check_point - 1], vals[check_point - 1], color="red", label="Check Point")
 
 plt.xlabel("Epoch")
 plt.ylabel("Loss")

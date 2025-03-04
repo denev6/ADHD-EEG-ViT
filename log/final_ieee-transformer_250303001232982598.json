@@ -1,0 +1,40 @@
+{
+  "config": {
+    "name": "ieee-transformer",
+    "batch": 8,
+    "epochs": 35,
+    "lr": 0.001,
+    "enable_fp16": true,
+    "grad_step": 4,
+    "warmup_steps": 30,
+    "lr_decay_factor": 0.5,
+    "weight_decay": 0.001,
+    "patience": 30,
+    "id": "250303001232982598",
+    "model_path": "ieee-transformer_250303001232982598_3.pt",
+    "k_folds": 5
+  },
+  "data": {
+    "tag": "IEEE_23",
+    "train": "ieee_train.pt",
+    "test": "ieee_test.pt",
+    "val": "ieee_val.pt",
+    "channels": 19,
+    "length": 9250,
+    "num_classes": 2
+  },
+  "model": {
+    "embed_dim": 64,
+    "num_heads": 4,
+    "num_blocks": 4,
+    "block_hidden_dim": 128,
+    "fc_hidden_dim": 32,
+    "dropout": 0.1
+  },
+  "metrics": {
+    "accuracy": 0.9722222222222222,
+    "f1-score": 0.975609756097561,
+    "recall": 0.9523809523809523,
+    "auc": 0.9761904761904762
+  }
+}

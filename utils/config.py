@@ -69,5 +69,3 @@ class Config:
             if k in self.__dict__.keys():
                 raise KeyError(f"Duplicate key: {k}")
             object.__setattr__(self, k, v)
-
-

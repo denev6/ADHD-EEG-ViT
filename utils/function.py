@@ -19,6 +19,14 @@ import matplotlib.pyplot as plt
 
 
 # Google Drive for Colab env
+def _mount_google_drive():
+    import sys
+    from google.colab import drive
+
+    drive.mount("/content/drive", force_remount=False)
+    sys.path.append("/content/drive/MyDrive")
+
+
 def join_drive_path(*args):
     """Join Google Drive path"""
     return os.path.join("/content/drive/MyDrive", *args)
