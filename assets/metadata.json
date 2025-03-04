@@ -2,21 +2,9 @@
   "name": "EEG data for ADHD / Control children",
   "description": "EEG dataset for ADHD classification.",
   "license": "CC BY 4.0",
-  "train_size": [
-    121,
-    19,
-    9250
-  ],
-  "val_size": [
-    17,
-    19,
-    9250
-  ],
-  "test_size": [
-    36,
-    19,
-    9250
-  ],
+  "train_size": [121, 19, 9250],
+  "val_size": [17, 19, 9250],
+  "test_size": [36, 19, 9250],
   "data_length": 9250,
   "channel": 19,
   "label": {

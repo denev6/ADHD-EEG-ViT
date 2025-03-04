@@ -13,6 +13,7 @@ __all__ = [
     "join_drive_path",
     "clear_cache",
     "device",
+    "inference",
     "evaluate",
     "plot_roc",
     "ignore_warnings",

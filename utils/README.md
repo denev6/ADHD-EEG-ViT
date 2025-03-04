@@ -1,6 +1,6 @@
 # Utilities for Model Training
 
-Available classes and functions: [list](__init__.py)
+Train transformers with PyTorch in Colab
 
 ## Google Colab
 
@@ -17,15 +17,20 @@ sys.path.append("/content/drive/MyDrive")
 
 ### FP16 precision
 
-Colab's GPUs support FP16 precision, which significantly sped up training by roughly threefold. (Specifically, 5 epochs took 207.32 seconds with standard precision to train the transformer and only 61.92 seconds with FP16.)
+Colab GPUs support FP16 precision, which significantly sped up training. (Specifically, 5 epochs took 207.32 seconds with standard precision to train the transformer and only 61.92 seconds with FP16.)
+
+```python
+train(..., enable_fp16=True)
+```
 
 ## Train
 
 ```python
 import torch
 from utils import train, device
+from models.transformer import Transformer
 
-model = CNN(...)
+model = Transformer(...)
 optimizer = torch.optim.SGD(model.parameters(), ...)
 criterion = torch.nn.CrossEntropyLoss(...)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, ...)
@@ -55,8 +60,9 @@ check_point = train(
 ```python
 import torch
 from utils import train_with_kfold, device
+from models.transformer import Transformer
 
-model = CNN # without init
+model = Transformer # without init
 optimizer = torch.optim.SGD # without init
 criterion = torch.nn.CrossEntropyLoss(...)
 

@@ -26,12 +26,11 @@ model = ViTransformer(
     dropout_p=model_config.dropout,
 ).to(device)
 
-# Run in $root/
-model_path = "./log/ieee-transformer_250302035900177174_5.pt"
+model_path = "/.../model.pt"
 trained_weights = torch.load(model_path, weights_only=True, map_location=device)
 model.load_state_dict(trained_weights)
 
-test_data_path = "./assets/IEEE/test.pt"
+test_data_path = "/.../test.pt"
 test_dataset = EEGDataset(test_data_path)
 test_dataloader = DataLoader(test_dataset, batch_size=4)
 

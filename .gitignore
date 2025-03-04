@@ -1,15 +1,8 @@
-# Backup
-assets/backup_*
-
-# Setup
 .idea/
 .vscode
 desktop.ini
 .ipynb*
-
-# Local
 __pycache__
-assets/IEEE/*.pt
 
 # Private
 p_*

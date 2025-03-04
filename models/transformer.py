@@ -165,7 +165,9 @@ class ViTransformer(nn.Module):
 if __name__ == "__main__":
     from torchinfo import summary
 
-    # Original EEG-Transformer from the paper (Table 1)
+    # Original EEG-Transformer:
+    # Classification of attention deficit/hyperactivity disorder
+    # based on EEG signals using a EEG-Transformer model, 2023.
     model = Transformer(
         input_channel=56,
         seq_length=385,

@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch
 import posixpath
 
-import torch
 import torch.nn as nn
 import torch.optim
 from torch.utils.data import TensorDataset
