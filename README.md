@@ -1,5 +1,17 @@
 # Children ADHD detection with EEG signal
 
+**Attention Deficit/Hyperactivity Disorder (ADHD)** is one of the most common disorders in children and adolescents. If not properly diagnosed and treated at an early stage, it can have long-term negative effects on academic achievement, social relationships, and emotional development. Among the various brainwave signals that can aid in ADHD diagnosis, **EEG** (Electroencephalogram) is widely used in neuroscience research and clinical diagnosis as a non-invasive method for measuring brain activity.  
+
+This project designed and experimented with a deep learning model to assist in diagnosing adolescent ADHD using EEG signals. Based on the ideas from **Vision Transformer** (A. Dosovitskiy et al., 2021) and **EEG-Transformer** (Y. He et al., 2023), we implemented a transformer-based model. Using the "_EEG Data ADHD-Control Children_" dataset provided by IEEE, we achieved **a high accuracy of 0.972**.  
+
+The key advantages of our model are as follows:  
+
+- End-to-end training is possible without requiring complex preprocessing steps.  
+- By utilizing mixed precision techniques, we improved training speed while maintaining high accuracy.  
+- The embedding layer was adjusted to enhance scalability, making it easier to apply the model to other EEG datasets.  
+
+However, we observed an overfitting issue during the training process. This is likely due to the limited dataset, and we expect that acquiring additional data or applying data augmentation techniques will improve the model’s robustness in the future.
+
 ## Inference
 
 ```bash
@@ -33,4 +45,4 @@ The dataset is expected to be a dictionary containing 'data' and 'label' keys. F
 
 ## Blog
 
-[EEG 신호를 활용한 청소년 ADHD 진단](https://denev6.github.io/projects/2025/03/05/eeg-transformer.html)
+한국어: [EEG 신호를 활용한 청소년 ADHD 진단](https://denev6.github.io/projects/2025/03/05/eeg-transformer.html)
